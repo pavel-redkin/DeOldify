@@ -61,12 +61,12 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install PyTorch with CUDA 12.4 support, then remaining dependencies
-RUN pip install --no-cache-dir \
+RUN python3.14 -m pip install --no-cache-dir \
     --extra-index-url https://download.pytorch.org/whl/cu124 \
     torch>=2.5.0 \
     torchvision>=0.20.0 \
     torchaudio>=2.5.0 \
-    && pip install --no-cache-dir -r requirements.txt
+    && python3.14 -m pip install --no-cache-dir -r requirements.txt
 
 # ---------------------------------------------------------------------------
 # Stage 3: Final image
