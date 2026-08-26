@@ -76,7 +76,8 @@ FROM base AS runtime
 WORKDIR /app
 
 # Copy installed Python packages from deps stage
-COPY --from=deps /usr/local/lib/python${PYTHON_VERSION}/dist-packages /usr/local/lib/python${PYTHON_VERSION}/dist-packages
+# Note: ARG values are not available in COPY --from, so hardcode python3.14
+COPY --from=deps /usr/local/lib/python3.14/dist-packages /usr/local/lib/python3.14/dist-packages
 COPY --from=deps /usr/local/bin /usr/local/bin
 
 # Copy project code
