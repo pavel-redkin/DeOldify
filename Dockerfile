@@ -15,25 +15,30 @@
 # ---------------------------------------------------------------------------
 # Stage 1: Base with system dependencies
 # ---------------------------------------------------------------------------
-FROM nvidia/cuda:12.4.0-devel-ubuntu24.04 AS base
+FROM nvidia/cuda:12.6.3-devel-ubuntu24.04 AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PYTHON_VERSION=3.14
 
 # System dependencies
+# Add deadsnakes PPA with signed-by to avoid legacy keyring warning
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
+    ca-certificates \
+    curl \
+    gnupg \
+    && install -d /etc/apt/keyrings \
+    && curl -fsSL https://keyserver.ubuntu.com/pks/lookup?op=get\&search=0x105272E460B10A2C \
+    | gpg --dearmor -o /etc/apt/keyrings/deadsnakes.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy main" \
+    > /etc/apt/sources.list.d/deadsnakes.list \
     && apt-get update && apt-get install -y --no-install-recommends \
     python${PYTHON_VERSION} \
     python${PYTHON_VERSION}-venv \
     python${PYTHON_VERSION}-dev \
-    python${PYTHON_VERSION}-distutils \
-    curl \
     wget \
     git \
     ffmpeg \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
