@@ -1,0 +1,75 @@
+# Git
+.git
+.gitignore
+.github
+.gitlab-ci.yml
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.egg-info
+*.egg
+.eggs
+dist
+build
+develop-eggs
+.installed.cfg
+*.whl
+
+# Virtual environments
+.venv
+venv
+env
+ENV
+.env
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Testing
+.tox
+.pytest_cache
+.coverage
+.coverage.*
+htmlcov
+coverage.xml
+*.cover
+.hypothesis
+
+# Documentation
+doc
+docs
+*.md
+!README.md
+
+# Jupyter
+.ipynb_checkpoints
+
+# Model weights (mount these at runtime)
+models/*.pth
+models/*.pkl
+test_images
+
+# Data
+data
+result_images
+tmp
+*.prof
+
+# Training notebooks (not needed at runtime)
+ColorizeTraining*.ipynb
+ColorFIDBenchmark*.ipynb
+lesson7-superres*.ipynb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore
