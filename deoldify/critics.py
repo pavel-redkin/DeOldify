@@ -1,10 +1,9 @@
-from fastai.basic_train import Learner
-from fastai.core import *
-from fastai.layers import NormType, conv_layer
+from fastai.learner import Learner
 from fastai.torch_core import *
-from fastai.vision import *
-from fastai.vision.data import ImageDataBunch
+from fastai.layers import NormType, conv_layer
+from fastai.vision.all import *
 from fastai.vision.gan import AdaptiveLoss, accuracy_thresh_expand
+import torch.nn as nn
 
 _conv_args = dict(leaky=0.2, norm_type=NormType.Spectral)
 
@@ -34,7 +33,7 @@ def custom_gan_critic(
 
 
 def colorize_crit_learner(
-    data: ImageDataBunch,
+    data,
     loss_critic=AdaptiveLoss(nn.BCEWithLogitsLoss()),
     nf: int = 256,
 ) -> Learner:

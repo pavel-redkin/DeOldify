@@ -1,9 +1,9 @@
-from fastai.basic_train import Learner, LearnerCallback
+from fastai.learner import Learner, Callback
 from fastai.vision.gan import GANLearner
 
 
-class GANSaveCallback(LearnerCallback):
-    """A `LearnerCallback` that saves history of metrics while training `learn` into CSV `filename`."""
+class GANSaveCallback(Callback):
+    """A `Callback` that saves history of metrics while training `learn` into CSV `filename`."""
 
     def __init__(
         self,
@@ -12,12 +12,14 @@ class GANSaveCallback(LearnerCallback):
         filename: str,
         save_iters: int = 1000,
     ):
-        super().__init__(learn)
+        super().__init__()
         self.learn_gen = learn_gen
         self.filename = filename
         self.save_iters = save_iters
 
-    def on_batch_end(self, iteration: int, epoch: int, **kwargs) -> None:
+    def after_batch(self, **kwargs) -> None:
+        iteration = kwargs.get('iteration', 0)
+        epoch = kwargs.get('epoch', 0)
         if iteration == 0:
             return
 

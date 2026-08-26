@@ -1,16 +1,17 @@
-from fastai.layers import *
-from .layers import *
 from fastai.torch_core import *
-from fastai.callbacks.hooks import *
-from fastai.vision import *
+from fastai.layers import *
+from fastai.callback.hook import *
+from fastai.vision.all import *
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+from .layers import custom_conv_layer
 
-
-# The code below is meant to be merged into fastaiv1 ideally
 
 __all__ = ['DynamicUnetDeep', 'DynamicUnetWide']
 
 
-def _get_sfs_idxs(sizes: Sizes) -> List[int]:
+def _get_sfs_idxs(sizes):
     "Get the indexes of the layers where the size of the activation changes."
     feature_szs = [size[-1] for size in sizes]
     sfs_idxs = list(
@@ -40,9 +41,6 @@ class CustomPixelShuffle_ICNR(nn.Module):
         )
         icnr(self.conv[0].weight)
         self.shuf = nn.PixelShuffle(scale)
-        # Blurring over (h*w) kernel
-        # "Super-Resolution using Convolutional Neural Networks without Any Checkerboard Artifacts"
-        # - https://arxiv.org/abs/1806.02658
         self.pad = nn.ReplicationPad2d((1, 0, 1, 0))
         self.blur = nn.AvgPool2d(2, stride=1)
         self.relu = relu(True, leaky=leaky)
@@ -72,7 +70,7 @@ class UnetBlockDeep(nn.Module):
         self.shuf = CustomPixelShuffle_ICNR(
             up_in_c, up_in_c // 2, blur=blur, leaky=leaky, **kwargs
         )
-        self.bn = batchnorm_2d(x_in_c)
+        self.bn = BatchNorm(x_in_c)
         ni = up_in_c // 2 + x_in_c
         nf = int((ni if final_div else ni // 2) * nf_factor)
         self.conv1 = custom_conv_layer(ni, nf, leaky=leaky, **kwargs)
@@ -101,7 +99,7 @@ class DynamicUnetDeep(SequentialEx):
         blur: bool = False,
         blur_final=True,
         self_attention: bool = False,
-        y_range: Optional[Tuple[float, float]] = None,
+        y_range = None,
         last_cross: bool = True,
         bottle: bool = False,
         norm_type: Optional[NormType] = NormType.Batch,
@@ -125,7 +123,7 @@ class DynamicUnetDeep(SequentialEx):
             ),
         ).eval()
         x = middle_conv(x)
-        layers = [encoder, batchnorm_2d(ni), nn.ReLU(), middle_conv]
+        layers = [encoder, BatchNorm(ni), nn.ReLU(), middle_conv]
 
         for i, idx in enumerate(sfs_idxs):
             not_final = i != len(sfs_idxs) - 1
@@ -188,7 +186,7 @@ class UnetBlockWide(nn.Module):
         self.shuf = CustomPixelShuffle_ICNR(
             up_in_c, up_out, blur=blur, leaky=leaky, **kwargs
         )
-        self.bn = batchnorm_2d(x_in_c)
+        self.bn = BatchNorm(x_in_c)
         ni = up_out + x_in_c
         self.conv = custom_conv_layer(
             ni, x_out, leaky=leaky, self_attention=self_attention, **kwargs
@@ -215,7 +213,7 @@ class DynamicUnetWide(SequentialEx):
         blur: bool = False,
         blur_final=True,
         self_attention: bool = False,
-        y_range: Optional[Tuple[float, float]] = None,
+        y_range = None,
         last_cross: bool = True,
         bottle: bool = False,
         norm_type: Optional[NormType] = NormType.Batch,
@@ -241,7 +239,7 @@ class DynamicUnetWide(SequentialEx):
             ),
         ).eval()
         x = middle_conv(x)
-        layers = [encoder, batchnorm_2d(ni), nn.ReLU(), middle_conv]
+        layers = [encoder, BatchNorm(ni), nn.ReLU(), middle_conv]
 
         for i, idx in enumerate(sfs_idxs):
             not_final = i != len(sfs_idxs) - 1

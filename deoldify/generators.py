@@ -1,12 +1,14 @@
-from fastai.basic_data import DataBunch
-from fastai.basic_train import Learner
+from fastai.learner import Learner
+from fastai.torch_core import *
+from fastai.vision.all import *
 from fastai.layers import NormType
-from fastai.torch_core import SplitFuncOrIdxList, apply_init, to_device
-from fastai.vision import *
-from fastai.vision.learner import cnn_config, create_body
+from fastai.vision.learner import create_body
+import torchvision.models as models
 from torch import nn
 from .unet import DynamicUnetWide, DynamicUnetDeep
-from .dataset import *
+from .dataset import get_colorize_data, get_dummy_databunch
+from pathlib import Path
+
 
 # Weights are implicitly read from ./models/ folder
 def gen_inference_wide(
@@ -22,7 +24,7 @@ def gen_inference_wide(
 
 
 def gen_learner_wide(
-    data: ImageDataBunch, gen_loss, arch=models.resnet101, nf_factor: int = 2
+    data, gen_loss, arch=models.resnet101, nf_factor: int = 2
 ) -> Learner:
     return unet_learner_wide(
         data,
@@ -37,29 +39,26 @@ def gen_learner_wide(
     )
 
 
-# The code below is meant to be merged into fastaiv1 ideally
 def unet_learner_wide(
-    data: DataBunch,
+    data,
     arch: Callable,
     pretrained: bool = True,
     blur_final: bool = True,
     norm_type: Optional[NormType] = NormType,
-    split_on: Optional[SplitFuncOrIdxList] = None,
     blur: bool = False,
     self_attention: bool = False,
-    y_range: Optional[Tuple[float, float]] = None,
+    y_range=None,
     last_cross: bool = True,
     bottle: bool = False,
     nf_factor: int = 1,
-    **kwargs: Any
+    **kwargs
 ) -> Learner:
     "Build Unet learner from `data` and `arch`."
-    meta = cnn_config(arch)
-    body = create_body(arch, pretrained)
+    body = create_body(arch, pretrained=pretrained)
     model = to_device(
         DynamicUnetWide(
             body,
-            n_classes=data.c,
+            n_classes=3,
             blur=blur,
             blur_final=blur_final,
             self_attention=self_attention,
@@ -72,14 +71,11 @@ def unet_learner_wide(
         data.device,
     )
     learn = Learner(data, model, **kwargs)
-    learn.split(ifnone(split_on, meta['split']))
     if pretrained:
         learn.freeze()
     apply_init(model[2], nn.init.kaiming_normal_)
     return learn
 
-
-# ----------------------------------------------------------------------
 
 # Weights are implicitly read from ./models/ folder
 def gen_inference_deep(
@@ -95,7 +91,7 @@ def gen_inference_deep(
 
 
 def gen_learner_deep(
-    data: ImageDataBunch, gen_loss, arch=models.resnet34, nf_factor: float = 1.5
+    data, gen_loss, arch=models.resnet34, nf_factor: float = 1.5
 ) -> Learner:
     return unet_learner_deep(
         data,
@@ -110,29 +106,26 @@ def gen_learner_deep(
     )
 
 
-# The code below is meant to be merged into fastaiv1 ideally
 def unet_learner_deep(
-    data: DataBunch,
+    data,
     arch: Callable,
     pretrained: bool = True,
     blur_final: bool = True,
     norm_type: Optional[NormType] = NormType,
-    split_on: Optional[SplitFuncOrIdxList] = None,
     blur: bool = False,
     self_attention: bool = False,
-    y_range: Optional[Tuple[float, float]] = None,
+    y_range=None,
     last_cross: bool = True,
     bottle: bool = False,
     nf_factor: float = 1.5,
-    **kwargs: Any
+    **kwargs
 ) -> Learner:
     "Build Unet learner from `data` and `arch`."
-    meta = cnn_config(arch)
-    body = create_body(arch, pretrained)
+    body = create_body(arch, pretrained=pretrained)
     model = to_device(
         DynamicUnetDeep(
             body,
-            n_classes=data.c,
+            n_classes=3,
             blur=blur,
             blur_final=blur_final,
             self_attention=self_attention,
@@ -145,11 +138,7 @@ def unet_learner_deep(
         data.device,
     )
     learn = Learner(data, model, **kwargs)
-    learn.split(ifnone(split_on, meta['split']))
     if pretrained:
         learn.freeze()
     apply_init(model[2], nn.init.kaiming_normal_)
     return learn
-
-
-# -----------------------------

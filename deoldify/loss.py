@@ -1,15 +1,17 @@
-from fastai import *
-from fastai.core import *
 from fastai.torch_core import *
-from fastai.callbacks import hook_outputs
+from fastai.losses import *
+from fastai.callback.hook import hook_outputs
 import torchvision.models as models
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 class FeatureLoss(nn.Module):
     def __init__(self, layer_wgts=[20, 70, 10]):
         super().__init__()
 
-        self.m_feat = models.vgg16_bn(True).features.cuda().eval()
+        self.m_feat = models.vgg16_bn(weights='IMAGENET1K_V1').features.cuda().eval()
         requires_grad(self.m_feat, False)
         blocks = [
             i - 1
@@ -47,7 +49,7 @@ class FeatureLoss(nn.Module):
 class WassFeatureLoss(nn.Module):
     def __init__(self, layer_wgts=[5, 15, 2], wass_wgts=[3.0, 0.7, 0.01]):
         super().__init__()
-        self.m_feat = models.vgg16_bn(True).features.cuda().eval()
+        self.m_feat = models.vgg16_bn(weights='IMAGENET1K_V1').features.cuda().eval()
         requires_grad(self.m_feat, False)
         blocks = [
             i - 1
@@ -76,7 +78,6 @@ class WassFeatureLoss(nn.Module):
         n = tensor.shape[2]
         mu = tensor.mean(2)
         tensor = (tensor - mu[:, :, None]).squeeze(0)
-        # Prevents nasty bug that happens very occassionally- divide by zero.  Why such things happen?
         if n == 0:
             return None, None
         cov = torch.mm(tensor, tensor.t()) / float(n)
