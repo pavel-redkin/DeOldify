@@ -5,7 +5,7 @@ import abc, collections, hashlib, itertools, json, operator, pathlib
 import mimetypes, inspect, typing, functools, importlib, weakref
 import html, re, requests, tarfile, numbers, tempfile, bz2
 
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from collections import abc,  Counter, defaultdict, namedtuple, OrderedDict
 from collections.abc import Iterable
 import concurrent
@@ -26,8 +26,14 @@ from matplotlib.patches import Patch
 from pandas import Series, DataFrame
 from io import BufferedWriter, BytesIO
 
-import pkg_resources
-pkg_resources.require("fastprogress>=0.1.19")
+import importlib.metadata as _importlib_metadata
+try:
+    _fp_ver = _importlib_metadata.version("fastprogress")
+except _importlib_metadata.PackageNotFoundError:
+    _fp_ver = "0.0.0"
+from packaging.version import Version as _Version
+if _Version(_fp_ver) < _Version("0.1.19"):
+    raise ImportError("fastprogress>=0.1.19 is required")
 from fastprogress.fastprogress import master_bar, progress_bar
 
 #for type annotations
@@ -44,7 +50,9 @@ def try_import(module):
 def have_min_pkg_version(package, version):
     "Check whether we have at least `version` of `package`. Returns True on success, False otherwise."
     try:
-        pkg_resources.require(f"{package}>={version}")
-        return True
-    except:
+        import importlib.metadata as _im
+        from packaging.version import Version as _V
+        pkg_ver = _im.version(package)
+        return _V(pkg_ver) >= _V(version)
+    except Exception:
         return False

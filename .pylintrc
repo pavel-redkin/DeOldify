@@ -359,7 +359,7 @@ no-docstring-rgx=^_
 # List of decorators that produce properties, such as abc.abstractproperty. Add
 # to this list to register other decorators that produce valid properties.
 # These decorators are taken in consideration only for invalid-name.
-property-classes=abc.abstractproperty
+property-classes=abc.abstractmethod
 
 # Naming style matching correct variable names.
 variable-naming-style=snake_case
@@ -382,7 +382,6 @@ contextmanager-decorators=contextlib.contextmanager
 # expressions are accepted.
 generated-members=torch.mm,
                   torch.diag,
-                  torch.symeig,
                   torch.sqrt,
                   torch.cat,
                   cv2.cvtColor,

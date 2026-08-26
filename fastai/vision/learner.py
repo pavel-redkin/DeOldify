@@ -53,7 +53,10 @@ def has_pool_type(m):
 
 def create_body(arch:Callable, pretrained:bool=True, cut:Optional[Union[int, Callable]]=None):
     "Cut off the body of a typically pretrained `model` at `cut` (int) or cut the model as specified by `cut(model)` (function)."
-    model = arch(pretrained=pretrained)
+    try:
+        model = arch(pretrained=pretrained)
+    except TypeError:
+        model = arch(weights='IMAGENET1K_V1' if pretrained else None)
     cut = ifnone(cut, cnn_config(arch)['cut'])
     if cut is None:
         ll = list(enumerate(model.children()))

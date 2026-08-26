@@ -86,7 +86,7 @@ class WassFeatureLoss(nn.Module):
         mean, cov = self._calc_2_moments(tensor)
         if mean is None:
             return None, None, None
-        eigvals, eigvects = torch.symeig(cov, eigenvectors=True)
+        eigvals, eigvects = torch.linalg.eigh(cov)
         eigroot_mat = torch.diag(torch.sqrt(eigvals.clamp(min=0)))
         root_cov = torch.mm(torch.mm(eigvects, eigroot_mat), eigvects.t())
         tr_cov = eigvals.clamp(min=0).sum()
@@ -95,11 +95,11 @@ class WassFeatureLoss(nn.Module):
     def _calc_l2wass_dist(
         self, mean_stl, tr_cov_stl, root_cov_stl, mean_synth, cov_synth
     ):
-        tr_cov_synth = torch.symeig(cov_synth, eigenvectors=True)[0].clamp(min=0).sum()
+        tr_cov_synth = torch.linalg.eigh(cov_synth)[0].clamp(min=0).sum()
         mean_diff_squared = (mean_stl - mean_synth).pow(2).sum()
         cov_prod = torch.mm(torch.mm(root_cov_stl, cov_synth), root_cov_stl)
         var_overlap = torch.sqrt(
-            torch.symeig(cov_prod, eigenvectors=True)[0].clamp(min=0) + 1e-8
+            torch.linalg.eigh(cov_prod)[0].clamp(min=0) + 1e-8
         ).sum()
         dist = mean_diff_squared + tr_cov_stl + tr_cov_synth - 2 * var_overlap
         return dist

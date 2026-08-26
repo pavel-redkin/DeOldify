@@ -4,4 +4,4 @@ repos:
     hooks:
     - id: black
       args: [-S]
-      language_version: python3.6
+      language_version: python3.14

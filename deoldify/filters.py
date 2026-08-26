@@ -59,7 +59,7 @@ class BaseFilter(IFilter):
         except RuntimeError as rerr:
             if 'memory' not in str(rerr):
                 raise rerr
-            logging.warn('Warning: render_factor was set too high, and out of memory error resulted. Returning original image.')
+            logging.warning('Warning: render_factor was set too high, and out of memory error resulted. Returning original image.')
             return model_image
             
         out = result[0]
