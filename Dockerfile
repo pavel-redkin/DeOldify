@@ -21,20 +21,15 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PYTHON_VERSION=3.14
 
 # System dependencies
-# Add deadsnakes PPA with signed-by to avoid legacy keyring warning
+# Add deadsnakes PPA for Python 3.14
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gnupg \
-    && install -d /etc/apt/keyrings \
-    && curl -fsSL https://keyserver.ubuntu.com/pks/lookup?op=get\&search=0x105272E460B10A2C \
-    | gpg --dearmor -o /etc/apt/keyrings/deadsnakes.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy main" \
-    > /etc/apt/sources.list.d/deadsnakes.list \
+    software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update && apt-get install -y --no-install-recommends \
     python${PYTHON_VERSION} \
     python${PYTHON_VERSION}-venv \
     python${PYTHON_VERSION}-dev \
+    curl \
     wget \
     git \
     ffmpeg \
@@ -52,8 +47,8 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1
 
 # Install pip
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION} \
-    && python -m pip install --no-cache-dir --upgrade pip setuptools wheel packaging
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.14 \
+    && python3.14 -m pip install --no-cache-dir --upgrade pip setuptools wheel packaging
 
 # ---------------------------------------------------------------------------
 # Stage 2: Python dependencies
