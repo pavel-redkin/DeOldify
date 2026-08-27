@@ -5,7 +5,7 @@ channels:
 - defaults
 dependencies:
 - pip
-- fastai=1.0.60
+- fastai=2.8.8
 - mkl=2024.0
 - python=3.14
 - pytorch::pytorch>=2.5.0
@@ -13,7 +13,7 @@ dependencies:
 - pytorch::torchaudio
 - tensorboardX
 - jupyterlab
-- pillow>=9.0.0
+- pillow>=10.0.0
 - ipywidgets
 - ffmpeg
 - pip:
