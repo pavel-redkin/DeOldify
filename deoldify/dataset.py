@@ -19,7 +19,7 @@ def get_colorize_data(
         xtra_tfms = []
 
     src = Datasets(
-        crappy_path,
+        get_image_files(crappy_path),
         tfms=[[PILImage.create], [PILImage.create]],
         n_inp=1,
     )
