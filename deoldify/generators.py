@@ -25,16 +25,28 @@ def _instantiate_arch(arch, pretrained: bool = True) -> nn.Module:
     return arch()
 
 
-def _safe_create_body(arch, pretrained: bool = True):
-    """Create body from arch, working around fastai version incompatibilities."""
+def _safe_create_body(arch, pretrained: bool = True, cut=None):
+    """Create body from arch, working around fastai version incompatibilities.
+
+    fastai's create_body expects arch to be callable and instantiates it internally,
+    but some installed versions don't do this correctly (passing the function through
+    as-is). This wrapper detects that failure and manually instantiates + cuts.
+    """
     try:
-        body = create_body(arch, pretrained=pretrained)
-        _ = list(body.children())
+        body = create_body(arch, pretrained=pretrained, cut=cut)
+        # Verify body is a real Module with children, not the raw function
+        list(body.children())
         return body
     except (AttributeError, TypeError):
-        model = _instantiate_arch(arch, pretrained=pretrained)
-        body = nn.Sequential(*list(model.children())[:-1])
-        return body
+        pass
+
+    model = _instantiate_arch(arch, pretrained=pretrained)
+    cut = ifnone(cut, -2)
+    if isinstance(cut, int):
+        return nn.Sequential(*list(model.children())[:cut])
+    elif callable(cut):
+        return cut(model)
+    raise ValueError("cut must be either int or callable")
 
 
 # Weights are implicitly read from ./models/ folder
