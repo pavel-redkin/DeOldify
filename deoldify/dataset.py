@@ -40,6 +40,29 @@ def get_colorize_data(
 
 def get_dummy_databunch() -> DataLoaders:
     path = Path('./dummy/')
-    return get_colorize_data(
-        sz=1, bs=1, crappy_path=path, good_path=path, keep_pct=0.001
-    )
+    try:
+        return get_colorize_data(
+            sz=1, bs=1, crappy_path=path, good_path=path, keep_pct=0.001
+        )
+    except TypeError:
+        pass
+
+    from fastai.data.core import DataLoaders, TfmdDL
+    from torch.utils.data import DataLoader, Dataset
+
+    class _DummyDataset(Dataset):
+        def __init__(self):
+            self.items = list(get_image_files(path)) or [path / 'placeholder.png']
+
+        def __len__(self):
+            return len(self.items)
+
+        def __getitem__(self, idx):
+            img = PILImage.create(self.items[idx])
+            return img, img
+
+    ds = _DummyDataset()
+    dummy_dl = DataLoader(ds, batch_size=1)
+    dls = DataLoaders(dummy_dl, dummy_dl)
+    dls.c = 3
+    return dls
