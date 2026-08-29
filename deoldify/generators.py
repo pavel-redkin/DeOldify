@@ -10,6 +10,33 @@ from .dataset import get_colorize_data, get_dummy_databunch
 from pathlib import Path
 
 
+def _instantiate_arch(arch, pretrained: bool = True) -> nn.Module:
+    """Instantiate an arch callable into an nn.Module, handling API changes."""
+    if isinstance(arch, nn.Module):
+        return arch
+    try:
+        return arch(pretrained=pretrained)
+    except TypeError:
+        pass
+    try:
+        return arch(weights='IMAGENET1K_V1' if pretrained else None)
+    except TypeError:
+        pass
+    return arch()
+
+
+def _safe_create_body(arch, pretrained: bool = True):
+    """Create body from arch, working around fastai version incompatibilities."""
+    try:
+        body = create_body(arch, pretrained=pretrained)
+        _ = list(body.children())
+        return body
+    except (AttributeError, TypeError):
+        model = _instantiate_arch(arch, pretrained=pretrained)
+        body = nn.Sequential(*list(model.children())[:-1])
+        return body
+
+
 # Weights are implicitly read from ./models/ folder
 def gen_inference_wide(
     root_folder: Path, weights_name: str, nf_factor: int = 2, arch=models.resnet101) -> Learner:
@@ -54,7 +81,7 @@ def unet_learner_wide(
     **kwargs
 ) -> Learner:
     "Build Unet learner from `data` and `arch`."
-    body = create_body(arch, pretrained=pretrained)
+    body = _safe_create_body(arch, pretrained=pretrained)
     model = to_device(
         DynamicUnetWide(
             body,
@@ -121,7 +148,7 @@ def unet_learner_deep(
     **kwargs
 ) -> Learner:
     "Build Unet learner from `data` and `arch`."
-    body = create_body(arch, pretrained=pretrained)
+    body = _safe_create_body(arch, pretrained=pretrained)
     model = to_device(
         DynamicUnetDeep(
             body,
