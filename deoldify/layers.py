@@ -2,6 +2,7 @@ from fastai.torch_core import *
 from fastai.layers import *
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils import spectral_norm
 
 
 def custom_conv_layer(
