@@ -38,7 +38,7 @@ def custom_conv_layer(
         conv = spectral_norm(conv)
     layers = [conv]
     if use_activ:
-        layers.append(relu(True, leaky=leaky))
+        layers.append(nn.LeakyReLU(negative_slope=leaky, inplace=True) if leaky is not None else nn.ReLU(inplace=True))
     if bn:
         layers.append((nn.BatchNorm1d if is_1d else nn.BatchNorm2d)(nf))
     if self_attention:
