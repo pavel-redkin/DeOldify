@@ -7,6 +7,21 @@ from deoldify import device as device_settings
 import logging
 import numpy as np
 import PIL.Image
+import torch
+
+
+def normalize_funcs(mean, std):
+    mean, std = tensor(mean), tensor(std)
+    def norm(inp, do_x=True):
+        x, y = inp
+        if do_x:
+            x = (x - mean.to(x.device)) / std.to(x.device)
+        return x, y
+    def denorm(x, do_x=True):
+        if do_x:
+            x = x * std.to(x.device) + mean.to(x.device)
+        return x
+    return norm, denorm
 
 
 class IFilter:

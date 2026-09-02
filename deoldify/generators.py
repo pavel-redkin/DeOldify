@@ -1,3 +1,5 @@
+import re
+
 from fastai.learner import Learner
 from fastai.torch_core import *
 from fastai.vision.all import *
@@ -8,6 +10,46 @@ from torch import nn
 from .unet import DynamicUnetWide, DynamicUnetDeep
 from .dataset import get_colorize_data, get_dummy_databunch
 from pathlib import Path
+
+
+def _remap_legacy_state_dict(state_dict):
+    """Remap state_dict keys from the legacy DeOldify/fastai module structure
+    to the current structure.  Three kinds of renamed paths are handled:
+
+    1. SelfAttention: old stores conv weights directly on .query/.key/.value;
+       new wraps them in ConvLayer (nn.Sequential) so a .0 is inserted.
+    2. res_block: old stores the block as self.conv → nn.Sequential;
+       new returns nn.Sequential directly (named attr → numeric index).
+    3. Middle conv block: old wraps in a module with self.layers;
+       new is bare nn.Sequential.
+    """
+    new_sd = {}
+    for k, v in state_dict.items():
+        # SelfAttention: .query. → .query.0.  (ConvLayer is now Sequential)
+        k = re.sub(r'\.(query|key|value)\.', r'.\1.0.', k)
+        # res_block: old named .conv attr → numeric index .0.
+        k = k.replace('.conv.', '.0.')
+        # middle block: .N.layers. → .N.
+        k = re.sub(r'(\d+)\.layers\.', r'\1.', k)
+        new_sd[k] = v
+    return new_sd
+
+
+def _load_weights_with_remap(learn, weights_name):
+    """Load weights with automatic key remapping for legacy checkpoints."""
+    import torch
+    from fastai.learner import load_model
+
+    weights_path = learn.path / learn.model_dir / f'{weights_name}.pth'
+    if not weights_path.exists():
+        weights_path = learn.path / f'{weights_name}.pth'
+    if not weights_path.exists():
+        learn.load(weights_name)
+        return
+
+    sd = torch.load(weights_path, map_location='cpu', weights_only=False)
+    sd = _remap_legacy_state_dict(sd)
+    learn.model.load_state_dict(sd, strict=False)
 
 
 def _instantiate_arch(arch, pretrained: bool = True) -> nn.Module:
@@ -57,7 +99,7 @@ def gen_inference_wide(
         data=data, gen_loss=F.l1_loss, nf_factor=nf_factor, arch=arch
     )
     learn.path = root_folder
-    learn.load(weights_name)
+    _load_weights_with_remap(learn, weights_name)
     learn.model.eval()
     return learn
 
@@ -124,7 +166,7 @@ def gen_inference_deep(
         data=data, gen_loss=F.l1_loss, arch=arch, nf_factor=nf_factor
     )
     learn.path = root_folder
-    learn.load(weights_name)
+    _load_weights_with_remap(learn, weights_name)
     learn.model.eval()
     return learn
 
