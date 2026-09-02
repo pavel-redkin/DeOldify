@@ -1,9 +1,12 @@
+import matplotlib
+matplotlib.use('Agg')
 from fastai.torch_core import *
 from fastai.vision.all import *
 from matplotlib.axes import Axes
 from .filters import IFilter, MasterFilter, ColorizerFilter
 from .generators import gen_inference_deep, gen_inference_wide
 from PIL import Image
+import PIL.Image
 import ffmpeg
 import yt_dlp as youtube_dl
 import gc

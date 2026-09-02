@@ -11,7 +11,7 @@ import torch
 
 
 def normalize_funcs(mean, std):
-    mean, std = tensor(mean), tensor(std)
+    mean, std = tensor(mean).view(1, 3, 1, 1), tensor(std).view(1, 3, 1, 1)
     def norm(inp, do_x=True):
         x, y = inp
         if do_x:
@@ -57,24 +57,24 @@ class BaseFilter(IFilter):
     def _model_process(self, orig: PilImage, sz: int) -> PilImage:
         model_image = self._get_model_ready_image(orig, sz)
         x = PILImage.create(model_image)
-        tensor = ToTensor()(x).to(self.device).unsqueeze(0)
+        tensor = ToTensor()(x).to(self.device).unsqueeze(0).float()
         tensor.div_(255)
         tensor, y = self.norm((tensor, tensor), do_x=True)
         
         try:
             with torch.no_grad():
-                result = self.learn.pred_batch(
-                    tensor=tensor, reconstruct=True
-                )
+                out = self.learn.model(tensor)
         except RuntimeError as rerr:
             if 'memory' not in str(rerr):
                 raise rerr
             logging.warning('Warning: render_factor was set too high, and out of memory error resulted. Returning original image.')
             return model_image
-            
-        out = result[0]
-        out = self.denorm(out.px, do_x=False)
-        out = image2np(out * 255).astype(np.uint8)
+
+        if isinstance(out, (list, tuple)):
+            out = out[0]
+        out = self.denorm(out, do_x=False)
+        out = out.squeeze(0).permute(1, 2, 0).cpu().numpy() * 255
+        out = np.clip(out, 0, 255).astype(np.uint8)
         return PilImage.fromarray(out)
 
     def _unsquare(self, image: PilImage, orig: PilImage) -> PilImage:

@@ -36,7 +36,7 @@ if gpu_enabled:
 else:
     device_settings.set(device=DeviceId.CPU)
 
-artistic = os.environ.get("DEOLDIFY_ARTISTIC", "1") == "1"
+artistic = os.environ.get("DEOLDIFY_ARTISTIC", "0") == "1"
 render_factor_default = int(os.environ.get("DEOLDIFY_RENDER_FACTOR", "35"))
 
 logger.info(
@@ -99,5 +99,5 @@ def health():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "5000"))
+    port = int(os.environ.get("PORT", "8181"))
     app.run(host="0.0.0.0", port=port)
