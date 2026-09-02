@@ -107,7 +107,7 @@ def unet_learner_wide(
             bottle=bottle,
             nf_factor=nf_factor,
         ),
-        data.device,
+        default_device(),
     )
     learn = Learner(data, model, **kwargs)
     if pretrained:
@@ -174,7 +174,7 @@ def unet_learner_deep(
             bottle=bottle,
             nf_factor=nf_factor,
         ),
-        data.device,
+        default_device(),
     )
     learn = Learner(data, model, **kwargs)
     if pretrained:

@@ -1,11 +1,25 @@
 from fastai.torch_core import *
 from fastai.layers import *
+from fastai.layers import icnr_init as icnr
 from fastai.callback.hook import *
 from fastai.vision.all import *
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from .layers import custom_conv_layer
+
+
+def relu(inplace=True, leaky=None):
+    return nn.LeakyReLU(negative_slope=leaky, inplace=inplace) if leaky is not None else nn.ReLU(inplace=inplace)
+
+
+def res_block(ni, nf=256, bottle=False, **kwargs):
+    expansion = 2 if bottle else 1
+    nf = ni if nf == 256 else nf
+    return nn.Sequential(
+        custom_conv_layer(ni, nf, ks=3, **kwargs),
+        custom_conv_layer(nf, nf * expansion, ks=3, use_activ=False, **kwargs),
+    )
 
 
 __all__ = ['DynamicUnetDeep', 'DynamicUnetWide']
